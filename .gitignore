@@ -1,1 +1,3 @@
-DO_NOT_CRASH/Debug
+*.sdf
+Debug/
+Do_NOT_CRASH/Debug
