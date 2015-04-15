@@ -9,7 +9,8 @@ RIGHTX = 840
 RIGHTY = 327
 LEFTX =  310
 LEFTY = 327
-RADIO = 28       ;车子近似为圆形时的直径
+XRADIO = 55      ;车子近似为圆形时的直径
+YRADIO = 23
 INRADIO = 176    ;内车道转弯的半径
 OUTRADIO = 233   ;外车道转弯的半径
 STARTX = 554	  ;出发点
@@ -39,8 +40,9 @@ CAR STRUCT
  inway dd 0		    ; 1 表示车子在内跑道，0FFFFFFFFH表示在里道
  speed dd SPEED	    ; 车子在直线时每个时间间隔跑的像素
  circle real4 CIRCLE   ; 车子在弯道时每个时间间隔转的角度（弧度数）
- kind dd 1         ; 车子的类别，1表示人控制的车，2-4表示自动控制的车
- area dd RADIO        ; 车子的像素宽度，为简便碰撞，将车子都近似为圆形
+ kind dd 0         ; 车子的类别，0表示人控制的车，123表示自动控制的车
+ mwidth dd XRADIO        ; 车子的像素宽度，为简便碰撞，将车子都近似为圆形
+ mheight dd YRADIO
  cradio dd INRADIO
 CAR ENDS
 
@@ -72,6 +74,8 @@ CAR ENDS
 				CarA:PTR CAR,
 				CarB:PTR CAR
 	GetSqua PROTO
+	ConvertRadian	PROTO,
+				cradian:real4
 	ConvertRadian	PROTO,
 				cradian:real4
 

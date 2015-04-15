@@ -27,10 +27,11 @@ slowCircle DWORD SLOWCIRCLE
 ;receive:mCar 指向小车结构体的指针
 ;没有返回
 ChangeWay PROC mCar:PTR CAR
+	
 	mov edi,mCar
 	assume edi:ptr CAR
 	mov eax,[edi].kind
-;	.IF eax == 1    人控制的小车与电脑控制小车换道方式相同
+
 		mov ebx,[edi].state
 		mov eax,[edi].position.y
 		.IF ebx == 0    ;在下直线
@@ -121,7 +122,7 @@ MoveOn PROC,
 	mov edi,mCar
 	assume edi:ptr CAR
 	mov eax,[edi].kind
-	.IF eax == 1    ;人控制的小车
+	.IF eax == 0    ;人控制的小车
 		mov ebx,[edi].state
 		mov eax,[edi].position.x
 		.IF ebx == 0    ;在下直线
@@ -245,6 +246,7 @@ MoveOn PROC,
 			mov [edi].position.y,ebx
 			jmp AL2
 		AL1:	
+
 			mov eax,rightCPoint.x
 			mov [edi].position.x,eax
 			mov ebx,[edi].inway
@@ -305,8 +307,6 @@ MoveOn ENDP
 CheckCollasion PROC,
 	CarA:PTR CAR,
 	CarB:PTR CAR
-LOCAL subx:DWORD
-LOCAL distance:DWORD
 
 	mov edi,CarA
 	mov esi,CarB
@@ -315,24 +315,23 @@ LOCAL distance:DWORD
 
 	mov eax,[edi].position.x
 	sub eax,[esi].position.x
-	INVOKE GetSqua
-	mov subx,eax
-	
-	mov eax,[edi].position.y
-	sub eax,[esi].position.y
-	INVOKE GetSqua
-	add eax,subx
-	mov distance,eax
+	jge subAbs1
+	neg eax
 
-	mov eax,[edi].area
-	INVOKE GetSqua
+subAbs1:	
 	
-	cmp eax,distance
-	jg CRASH
-	mov eax,0
-	jmp EXITCHECK
-CRASH:
-	mov eax,1
+	mov ebx,[edi].position.y
+	sub ebx,[esi].position.y
+	jge subAbs2
+	neg ebx
+
+subAbs2:	
+	.IF eax < XRADIO && ebx < YRADIO
+		mov eax,1
+	.ELSE
+		mov eax,0
+	.ENDIF
+	
 EXITCHECK:
 	assume edi:nothing
 	assume esi:nothing
@@ -361,7 +360,7 @@ LOCAL cAngle:DWORD
 	mov cAngle,360
 	FLD cradian
 	FIMUL cAngle
-	FIDIV mTwoPai
+	FDIV mTwoPai
 	FISTTP cAngle
 	mov eax,cAngle
 

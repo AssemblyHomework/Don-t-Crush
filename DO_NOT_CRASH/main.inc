@@ -10,46 +10,63 @@ Init MACRO mCar,mx,my,mdirection,mkind
 	FLD fcircle
 	FSTP mCar.circle
 	mov mCar.kind,mkind
-	mov mCar.area,RADIO
+	mov mCar.mwidth,XRADIO
+	mov mCar.mheight,YRADIO
 	mov mCar.cradio,OUTRADIO
 ENDM
 
-CarRect MACRO mCar, mrect
-	push eax
-	push ebx
-	mov eax,mCar.position.x
-	sub eax,RADIO/2
-	add eax,GameRect.left
-	mov mrect.left,eax
-	add eax,RADIO
-	mov mrect.right,eax
 
-	mov ebx,mCar.position.y
-	sub ebx,RADIO/2
-	add ebx,GameRect.top
-	mov mrect.top,eax
-	add eax,RADIO
-	mov mrect.left,eax
-
-	
-	pop ebx
-	pop eax
-
-ENDM
 
 DrawCar MACRO mCar
+
 	push eax
 	push ebx
+	push ecx
+	.IF CrashTime == 0
+		mov ecx,45
+	.ELSE
+		mov eax,45
+		mov edx,0
+		mov ecx,CRASHTIMES
+		mul CrashTime
+		div ecx
+		mov ecx,eax
+	.ENDIF
 	mov eax,mCar.position.x
-	sub eax,RADIO/2
+	sub eax,ecx
 	add eax,GameRect.left
 	mov ebx,mCar.position.y
-	sub ebx,RADIO/2
+	sub ebx,ecx
 	add ebx,GameRect.top
-
-	INVOKE BitBlt,memDC,eax,ebx,mainCar.area,mainCar.area,imgDC,0,0,SRCCOPY
+	
+	shl ecx,1
+	
+	INVOKE TransparentBlt,memDC,eax,ebx,ecx,ecx, imgDC,0,0,90,90,00FFFFFFH
+	
+	pop ecx
 	pop ebx
 	pop eax
+ENDM
+
+SelectAutoCarBmp MACRO autoCar
+
+	mov eax,GameOver
+	mov ebx,CollasionNum
+
+	.IF eax && ebx == autoCar.kind
+		INVOKE SelectObject,imgDC,BmpCrashCar
+	.ELSE
+		INVOKE ConvertRadian, autoCar.direction
+		.IF	eax >= 360
+			mov eax,0
+		.ENDIF
+		mov edx,0
+		mov ebx,20
+		div ebx
+		mov esi,[BmpAutoCar+eax*TYPE DWORD]
+		INVOKE SelectObject,imgDC,esi	
+	.ENDIF
+
 ENDM
 ;return eax
 Random MACRO	range
@@ -106,8 +123,14 @@ CopyCar MACRO newOne, oldOne
 	mov eax,oldOne.kind
 	mov newOne.kind,eax
 
-	mov eax,oldOne.area
-	mov newOne.area,eax
+	mov eax,oldOne.mwidth
+	mov newOne.mwidth,eax
 
+	mov eax,oldOne.mheight
+	mov newOne.mheight,eax
 ENDM
+
+
+
+
 
