@@ -63,6 +63,7 @@ StartTime dd 0
 CrashTime dd 0 
 
 StartFlag dd 0 
+ShadowOff dd -3
 
 GoodTicks dd 0
 GoodFlag dd 0
@@ -121,6 +122,7 @@ NumberWidth dd 150
 NumberOffY dd 285
 NumberHeight dd 70
 NumberRect RECT <>
+sNumberRect RECT <>
 
 BestOffX0 dd 489
 BestWidth0 dd 100
@@ -138,7 +140,10 @@ GoodOffY dd 285
 GoodHeight dd 70
 
 BestRect RECT <>
+sBestRect RECT <>
 BestRect0 RECT <>
+sBestRect0 RECT <>
+
 GoodRect RECT <>
 
 AllCarRect RECT <>
@@ -154,12 +159,12 @@ MenuOther BYTE "Other",0
 ;得分
 ScoreText BYTE 3 DUP (?),0
 BestText BYTE 3 DUP (?),0
-BestText0 BYTE "best:",0
+BestText0 BYTE "BEST:",0
 ;Good
 GoodText BYTE "GOOD+1",0
 ;字体名
-FontName BYTE "abc",0
-FontName1 BYTE "sabc",0
+FontName BYTE "Microsoft YaHei UI",0
+FontName1 BYTE "Microsoft YaHei UI",0
 ;消息窗口内容
 MsgTitle BYTE 0
 Author BYTE "I,YOU,HE",0
@@ -187,7 +192,9 @@ BmpCrashCar dd ?
 BmpMaskCar dd ?
 ;字体
 textFont HFONT ?
+stextFont HFONT ?
 bestFont HFONT ?
+sbestFont HFONT ?
 ;判断是否改变自动控制小车车道
 Change1 dd ?
 Change2 dd ?
@@ -240,12 +247,12 @@ WinMain PROC hInst:HINSTANCE,hPrevInstance:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
 	mov wndclass.hCursor,eax
 	mov wndclass.hIconSm,0
 	;初始化字体
-	INVOKE CreateFont, 50,
-                    30,
+	INVOKE CreateFont, 80,
+                    0,
                     0,
                     0,
                     FW_EXTRABOLD,
-                    TRUE,
+                    FALSE,
                     FALSE,
                     FALSE,
                     DEFAULT_CHARSET,
@@ -255,12 +262,27 @@ WinMain PROC hInst:HINSTANCE,hPrevInstance:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
                     DEFAULT_PITCH or FF_DONTCARE,
                     OFFSET FontName
     mov textFont, eax
-    INVOKE CreateFont, 30,
-                    20,
+	INVOKE CreateFont, 80,
+                    0,
                     0,
                     0,
                     FW_EXTRABOLD,
-                    TRUE,
+                    FALSE,
+                    FALSE,
+                    FALSE,
+                    DEFAULT_CHARSET,
+                    OUT_TT_PRECIS,
+                    CLIP_DEFAULT_PRECIS,
+                    CLEARTYPE_QUALITY,
+                    DEFAULT_PITCH or FF_DONTCARE,
+                    OFFSET FontName
+    mov stextFont, eax
+    INVOKE CreateFont, 40,
+                    0,
+                    0,
+                    0,
+                    FW_EXTRABOLD,
+                    FALSE,
                     FALSE,
                     FALSE,
                     DEFAULT_CHARSET,
@@ -270,6 +292,21 @@ WinMain PROC hInst:HINSTANCE,hPrevInstance:HINSTANCE,CmdLine:LPSTR,CmdShow:DWORD
                     DEFAULT_PITCH or FF_DONTCARE,
                     OFFSET FontName1
 	mov bestFont,eax
+	INVOKE CreateFont, 40,
+                    0,
+                    0,
+                    0,
+                    FW_EXTRABOLD,
+                    FALSE,
+                    FALSE,
+                    FALSE,
+                    DEFAULT_CHARSET,
+                    OUT_TT_PRECIS,
+                    CLIP_DEFAULT_PRECIS,
+                    CLEARTYPE_QUALITY,
+                    DEFAULT_PITCH or FF_DONTCARE,
+                    OFFSET FontName1
+	mov sbestFont,eax
 	;计算窗口位置，使窗口位于屏幕中央
 	mov dwStyle,WS_OVERLAPPEDWINDOW
 	mov eax,WS_SIZEBOX
@@ -384,28 +421,61 @@ InitRect PROC
 	mov NumberRect.left,eax
 	add eax,NumberWidth
 	mov NumberRect.right,eax
+
+	sub eax,ShadowOff
+	mov sNumberRect.right,eax
+	sub eax,NumberWidth
+	mov sNumberRect.left,eax
+
 	mov eax,NumberOffY
 	mov NumberRect.top,eax
 	add eax,NumberHeight
 	mov NumberRect.bottom,eax
+	
+	sub eax,ShadowOff
+	mov sNumberRect.bottom,eax
+	sub eax,NumberHeight
+	mov sNumberRect.top,eax
+
 	;最高纪录
 	mov eax,BestOffX
 	mov BestRect.left,eax
 	add eax,BestWidth
 	mov BestRect.right,eax
+
+	sub eax,ShadowOff
+	mov sBestRect.right,eax
+	sub eax,BestWidth
+	mov sBestRect.left,eax
+
 	mov eax,BestOffY
 	mov BestRect.top,eax
 	add eax,BestHeight
 	mov BestRect.bottom,eax
 
+	sub eax,ShadowOff
+	mov sBestRect.bottom,eax
+	sub eax,BestHeight
+	mov sBestRect.top,eax
+
 	mov eax,BestOffX0
 	mov BestRect0.left,eax
 	add eax,BestWidth0
 	mov BestRect0.right,eax
+
+	sub eax,ShadowOff
+	mov sBestRect0.right,eax
+	sub eax,BestWidth0
+	mov sBestRect0.left,eax
+
 	mov eax,BestOffY0
 	mov BestRect0.top,eax
 	add eax,BestHeight0
 	mov BestRect0.bottom,eax
+	sub eax,ShadowOff
+	mov sBestRect0.bottom,eax
+	sub eax,BestHeight0
+	mov sBestRect0.top,eax
 	;Good
 	mov eax,GoodOffX
 	mov GoodRect.left,eax
@@ -538,12 +608,26 @@ PaintProc PROC hWid:DWORD
 	;画得分
 ;	INVOKE FillRect,memDC,ADDR NumberRect, textBgBrush
 	INVOKE SetBkMode,memDC,TRANSPARENT
+
+	INVOKE SetTextColor,memDC,00909090h
+	INVOKE SelectObject,memDC,stextFont
+	INVOKE DrawText,memDC,ADDR ScoreText,-1,ADDR sNumberRect,DT_VCENTER
 	INVOKE SetTextColor,memDC,00EFF8FAh
 	INVOKE SelectObject,memDC,textFont
 	INVOKE DrawText,memDC,ADDR ScoreText,-1,ADDR NumberRect,DT_VCENTER
+	INVOKE SetTextColor,memDC,00909090h
+	INVOKE SelectObject,memDC,sbestFont
+	INVOKE DrawText,memDC,ADDR BestText0,-1,ADDR sBestRect0,DT_VCENTER
+	INVOKE SetTextColor,memDC,00EFF8FAh
 	INVOKE SelectObject,memDC,bestFont
 	INVOKE DrawText,memDC,ADDR BestText0,-1,ADDR BestRect0,DT_VCENTER
+	INVOKE SetTextColor,memDC,00909090h
+	INVOKE SelectObject,memDC,sbestFont
+	INVOKE DrawText,memDC,ADDR BestText,-1,ADDR sBestRect,DT_VCENTER
+	INVOKE SetTextColor,memDC,00EFF8FAh
+	INVOKE SelectObject,memDC,bestFont
 	INVOKE DrawText,memDC,ADDR BestText,-1,ADDR BestRect,DT_VCENTER
+
 	.IF GoodFlag == 1
 		mov eax,GOODDISTANCE
 		mov edx,0
